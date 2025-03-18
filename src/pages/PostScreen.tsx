@@ -119,68 +119,100 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 
 	return (
 		<Container maxWidth="lg">
-      		<Grid2 container spacing={3} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 2fr 1.5fr' } }}>
+			<Grid2 container spacing={{ xs: 0, md: 3}} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 2fr 1.5fr' } }}>
 				<Grid2>
-					<Box sx={{ mt: 5, p: 3, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
+					<Box sx={{ mt: {xs: 1, md: 3}, p: {xs: 2, md: 3}, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
 						<Loading isLoading={!profile}>
-							{profile && profile.avatar && (
-								<Avatar
-									alt={profile.displayName}
-									src={profile.avatar}
-									sx={{ width: 100, height: 100, mb: 2 }}
-								/>
-							)}
-							<Typography variant="h5">{profile ? profile.displayName : '---'}</Typography>
-							<Typography variant="body1"><strong>@{profile ? profile.handle : '---'}</strong></Typography>
-							<p></p>
-							<Typography variant="body1" style={{ fontSize: '12px'}}><em>{profile ? profile.description : ''}</em></Typography>
-							<Button
-								variant="contained"
-								color='error'
-								endIcon={<Logout/>}
-								fullWidth
-								sx={{ mt: 2 }}
-								onClick={handleLogout}
-							> Sair</Button>
+							<Box
+								sx={{
+								display: 'flex',
+								flexDirection: { xs: 'row', md: 'column' }, // Row for mobile, column for desktop
+								alignItems: { xs: 'center', md: 'flex-start' }, // Center align for mobile, left align for desktop
+								gap: { xs: 2, md: 0 }, // Add gap between items for mobile
+								}}
+							>
+								{
+									profile && profile.avatar && (
+										<Avatar
+											alt={profile.displayName}
+											src={profile.avatar}
+											sx={{
+											width: { xs: 50, md: 100 }, // Smaller avatar for mobile
+											height: { xs: 50, md: 100 },
+											mb: { xs: 0, md: 2 }, // No margin bottom for mobile
+											}}
+										/>
+									)
+								}
+
+								<Box sx={{ flexGrow: 1 }}>
+									<Typography variant="h5" sx={{ fontSize: { xs: '1.2rem', md: '1.5rem' } }}>
+										{profile ? profile.displayName : '---'}
+									</Typography>
+									<Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', md: '1rem' } }}>
+										<strong>@{profile ? profile.handle : '---'}</strong>
+									</Typography>
+								</Box>
+
+								<Button
+									variant="contained"
+									color="error"
+									sx={{
+										minWidth: { xs: 'auto', md: '100%' }, // Auto width for mobile, full width for desktop
+										p: { xs: 1, md: 2 }, // Smaller padding for mobile
+										mt: { xs: 0, md: 2 }, // No margin top for mobile
+									}}
+									onClick={handleLogout}
+								>
+									<Logout />
+									<Box sx={{ display: { xs: 'none', md: 'block' }, ml: 1 }}>
+										Sair
+									</Box>
+								</Button>
+							</Box>
 						</Loading>
 					</Box>
 				</Grid2>
 				<Grid2>
-					<Box sx={{ mt: 5, p: 3, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
-						<TextEditor rows={8} outputPost={setPost} clearEditor={clearPost} />
+					<Box sx={{ mt: {xs: 1, md: 3}, p: {xs: 2, md: 3}, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
+						<TextEditor agent={agent} outputPost={setPost} clearEditor={clearPost} rows={8} />
 						<Button
 							variant="contained"
 							color="primary"
-							endIcon={isPosting ? undefined : <Send/>}
+							endIcon={isPosting ? undefined : <Send />}
 							fullWidth
 							sx={{ mt: 2 }}
 							onClick={handlePost}
 							disabled={holdPostButton}
 						>
-							<Loading isLoading={isPosting}>
-								Postar
-							</Loading>
+							<Loading isLoading={isPosting}>Postar</Loading>
 						</Button>
 					</Box>
 				</Grid2>
 				<Grid2>
-					<Box sx={{ mt: 5, p: 3, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
+					<Box sx={{ mt: {xs: 1, md: 3}, p: {xs: 2, md: 3}, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
 						<Card variant="outlined">
 							<CardContent>
 								<Loading isLoading={!profile}>
-									<div style={{ display: 'flex'}}>
-										{profile && profile.avatar && (
-											<Avatar
-												alt={profile.displayName}
-												src={profile.avatar}
-												sx={{ width: 40, height: 40, mb: 2, border: 'solid 1px grey' }}
-											/>
-										)}
-										<div style={{ display: 'block', marginLeft: '10px'}}>
-											<Typography variant="body1" style={{ fontSize: '14px'}}><strong>{profile ? profile.displayName : '---'}</strong></Typography>
-											<Typography variant="body1" style={{ fontSize: '12px'}}>@{profile ? profile.handle : '---'}</Typography>											
-										</div>
-									</div>
+									<Box sx={{ display: 'flex' }}>
+										{
+											profile && profile.avatar && (
+												<Avatar
+													alt={profile.displayName}
+													src={profile.avatar}
+													sx={{ width: 40, height: 40, mb: 2, border: 'solid 1px grey' }}
+												/>
+											)
+										}
+										<Box sx={{ display: 'block', marginLeft: '10px' }}>
+											<Typography variant="body1" sx={{ fontSize: '14px' }}>
+												<strong>{profile ? profile.displayName : '---'}</strong>
+											</Typography>
+											<Typography variant="body1" sx={{ fontSize: '12px' }}>
+												@{profile ? profile.handle : '---'}
+											</Typography>
+										</Box>
+									</Box>
 									<Interweave className={'preview-text'} content={preview} />
 								</Loading>
 							</CardContent>

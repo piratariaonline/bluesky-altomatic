@@ -7,9 +7,12 @@ import { Image, InsertLink } from '@mui/icons-material';
 import CustomModal from './CustomModal';
 import { Button, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
+import UploadMedia from './UploadMedia';
+import AtpAgent from '@atproto/api';
 
 
 interface Props {
+	agent: AtpAgent,
 	outputPost: (content: string) => void,
 	clearEditor: boolean,
 	rows: number,
@@ -33,6 +36,7 @@ const TextEditor: React.FC<Props> = (props) => {
     const [selectedTextLimits, setSelectedTextLimits] = useState<TextSelection>({start: 0, end: 0})
     const [linkUrl, setLinkUrl] = useState<string>('');
     const [showInsertLinkBox, setShowInsertLinkBox] = useState<boolean>(false);
+    const [showInsertImageBox, setShowInsertImageBox] = useState<boolean>(false);
 
 	useEffect(() => {
 		if (props.clearEditor) {
@@ -56,7 +60,7 @@ const TextEditor: React.FC<Props> = (props) => {
 
 		const handleImageonClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
 			event.currentTarget.blur();
-			// TODO
+			setShowInsertImageBox(true);
 		}
 
 		return (
@@ -120,6 +124,11 @@ const TextEditor: React.FC<Props> = (props) => {
 		setShowInsertLinkBox(false);
 	}
 
+	const handleUploadImage = () => {
+
+		setShowInsertImageBox(false);
+	}
+
 	useEffect(() => console.log(showInsertLinkBox), [showInsertLinkBox]);
 
   return (
@@ -145,6 +154,11 @@ const TextEditor: React.FC<Props> = (props) => {
 					onChange={(e) => setLinkUrl(e.target.value)}
 					onKeyDown={(e) => e.key === 'Enter' && handleCreateLink()}
 				/>
+		</CustomModal>
+
+		<CustomModal show={showInsertImageBox} onClose={() => setShowInsertImageBox(false)}>
+			<Typography>Inserir imagem</Typography>
+				<UploadMedia agent={props.agent} onUpload={() => {}} />
 		</CustomModal>
     </>
 	);
