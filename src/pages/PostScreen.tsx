@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Container, Button, Typography, Box, Grid2, Avatar, CircularProgress} from "@mui/material";
+import { Container, Button, Typography, Box, Grid2, Avatar} from "@mui/material";
 import { AtpAgent, RichText } from "@atproto/api";
 import TextEditor from "../components/TextEditor";
 import Card from "@mui/joy/Card";
@@ -20,6 +20,7 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 	const [clearPost, setClearPost] = useState<boolean>(false);
 	const [postBody, setPostBody] = useState<any>();
     const [preview, setPreview] = useState<string>('');
+	const [images, setImages] = useState<any[]>([]);
 	const [timerToken, setTimerToken] = useState<any>();
 	const [holdPostButton, setHoldPostButton] = useState<boolean>();
 
@@ -100,9 +101,41 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 	}
 
 	const processPreviewContent = () => {
+		// TODO: Ajustar os thumbs, adicionar botões de função
 		const lineBrokenPost = post.replace(/\r?\n|\r/g, '<br/>');
 		const markdown = md.render(lineBrokenPost);
 		setPreview(markdown);
+	}
+
+	const procesPreviewImages = () => {
+		// TODO: Ajustar os processamentos de img para o post
+
+		// try {
+		// 	for (const file of files) {
+		// 		
+		// 		
+		// 		const buffer = await file.arrayBuffer();
+		// 		const byteArray = new Uint8Array(buffer);
+		// 		const encoding = file.type;
+		// 		const { data } = await agent.uploadBlob(byteArray, { encoding });
+
+		// 		images.push({
+		// 			imageBlob: {
+		// 				alt: '',
+		// 				image: data.blob,
+		// 				// aspectRatio: {
+		// 				// 	width: 1000,
+		// 				// 	height: 500
+		// 				// }
+		// 			},
+		// 			imageFile: file
+		// 		})
+		// 	}
+		// 	onUpload(images);
+
+		// } catch (error) {
+		// 	console.error("Upload failed", error);
+		// }
 	}
 
 	const handleLogout = async () => {
@@ -175,7 +208,7 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 				</Grid2>
 				<Grid2>
 					<Box sx={{ mt: {xs: 1, md: 3}, p: {xs: 2, md: 3}, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
-						<TextEditor agent={agent} outputPost={setPost} clearEditor={clearPost} rows={8} />
+						<TextEditor agent={agent} outputPost={setPost} outputImage={setImages} clearEditor={clearPost} rows={8} />
 						<Button
 							variant="contained"
 							color="primary"
@@ -214,6 +247,27 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 										</Box>
 									</Box>
 									<Interweave className={'preview-text'} content={preview} />
+									<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+									{
+										images && images.map((file, index) => (
+											<Box
+												key={index}
+												sx={{
+												border: '1px solid #ccc',
+												borderRadius: '4px',
+												padding: '10px',
+												textAlign: 'center',
+												}}
+											>
+												<img
+													src={URL.createObjectURL(file)}
+													alt={`Preview ${index + 1}`}
+													style={{ maxWidth: '100x', maxHeight: '100px' }}
+												/>
+											</Box>
+										))
+									}
+								</Box>
 								</Loading>
 							</CardContent>
 						</Card>

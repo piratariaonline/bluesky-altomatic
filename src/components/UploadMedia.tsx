@@ -1,52 +1,60 @@
 import React, { useState } from "react";
-import { Button, TextField } from "@mui/material";
+import { Box, Button, TextField, Typography } from "@mui/material";
+import { useDropzone } from 'react-dropzone';
 import AtpAgent from "@atproto/api";
 
-const UploadMedia: React.FC<{ agent: AtpAgent, onUpload: (images: any[]) => void }> = ({ agent, onUpload }) => {
-	const [files, setFiles] = useState<File[]>([]);
+interface Props {
+	agent: AtpAgent,
+	onUpload: (images: any[]) => void ,
+	onClose: () => void
+}
 
-	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		if (event.target.files && event.target.files.length > 1) {
-			const extractedFiles: File[] = [];
-			for (let i = 0; i < 4; i++)
-				extractedFiles.push(event.target.files[i]);
-			
-			setFiles(extractedFiles);
-		}
-	};
+// TODO: Adicionar loading no OK e fechar modal ao completar
 
-	const handleUpload = async () => {
-		if (files.length === 0) return;
+const UploadMedia: React.FC<Props> = (props) => {
 
-		const images = [];
+	const { agent, onUpload, onClose } = props;
 
-		try {
-			for (const file of files) {
-				const buffer = await file.arrayBuffer();
-				const byteArray = new Uint8Array(buffer);
-				const encoding = file.type;
-				const { data } = await agent.uploadBlob(byteArray, { encoding });
+	const [files, setFiles] = useState<any[]>([])
 
-				images.push({
-					alt: '',
-					image: data.blob,
-					// aspectRatio: {
-					// 	width: 1000,
-					// 	height: 500
-					// }
-				})
-			}
-			onUpload(images);
-		} catch (error) {
-			console.error("Upload failed", error);
-		}
-	};
+	const { getRootProps, getInputProps } = useDropzone({
+		accept: {
+			'image/*': ['.jpeg', '.jpg', '.png', '.gif'], // Accept only image files
+		},
+		onDrop: (acceptedFiles) => {
+			setFiles(acceptedFiles.slice(0, 4))
+			onUpload(acceptedFiles.slice(0, 4));
+		},
+	});
 
 	return (
-		<div>
-			<input type="file" multiple accept="image/*,video/*" onChange={handleFileChange} />
-			<Button onClick={handleUpload}>Enviar</Button>
-		</div>
+		<>
+			<Box
+			{...getRootProps()}
+			sx={{
+				border: '2px dashed #ccc',
+				borderRadius: '4px',
+				padding: '20px',
+				textAlign: 'center',
+				cursor: 'pointer',
+			}}
+			>
+			<input {...getInputProps()} />
+			<Typography color='textSecondary'>
+				{
+					files.length > 0
+						? `${files.length} image${files.length > 1 ? 'ns' : 'm'} selecionada${files.length > 1 ? 's' : ''}`
+						: 'Arraste e solte imagens para carregar, ou clique para escolher'
+				}
+				</Typography>
+				<Button variant="contained" color='info' sx={{ mt: 2 }}>
+					Escolher imagens
+				</Button>
+			</Box>
+			<Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+				<Button variant="contained" color='success' fullWidth onClick={onClose}>OK</Button>
+			</Box>
+		</>
 	);
 };
 

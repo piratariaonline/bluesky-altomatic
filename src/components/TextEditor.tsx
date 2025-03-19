@@ -14,6 +14,7 @@ import AtpAgent from '@atproto/api';
 interface Props {
 	agent: AtpAgent,
 	outputPost: (content: string) => void,
+	outputImage: (images: any[]) => void,
 	clearEditor: boolean,
 	rows: number,
 }
@@ -37,14 +38,18 @@ const TextEditor: React.FC<Props> = (props) => {
     const [linkUrl, setLinkUrl] = useState<string>('');
     const [showInsertLinkBox, setShowInsertLinkBox] = useState<boolean>(false);
     const [showInsertImageBox, setShowInsertImageBox] = useState<boolean>(false);
+	const [images, setImages] = useState<any[]>([]);
 
 	useEffect(() => {
 		if (props.clearEditor) {
 			setEditorContent('');
 			setCounter(0);
 		}
-			
 	}, [props.clearEditor])
+
+	useEffect(() =>
+		props.outputImage(images),
+	[images])
 
 	const renderCounter = () => (
 		<Typography level="body-xs" sx={{ ml: 'auto' }}>
@@ -157,8 +162,9 @@ const TextEditor: React.FC<Props> = (props) => {
 		</CustomModal>
 
 		<CustomModal show={showInsertImageBox} onClose={() => setShowInsertImageBox(false)}>
-			<Typography>Inserir imagem</Typography>
-				<UploadMedia agent={props.agent} onUpload={() => {}} />
+			<Box>
+				<UploadMedia agent={props.agent} onUpload={setImages} onClose={() => setShowInsertImageBox(false)}/>
+			</Box>
 		</CustomModal>
     </>
 	);
