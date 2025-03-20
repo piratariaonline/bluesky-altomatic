@@ -4,28 +4,29 @@ import { useDropzone } from 'react-dropzone';
 import AtpAgent from "@atproto/api";
 
 interface Props {
-	agent: AtpAgent,
 	onUpload: (images: any[]) => void ,
 	onClose: () => void
 }
 
-// TODO: Adicionar loading no OK e fechar modal ao completar
-
 const UploadMedia: React.FC<Props> = (props) => {
 
-	const { agent, onUpload, onClose } = props;
+	const { onUpload, onClose } = props;
 
 	const [files, setFiles] = useState<any[]>([])
 
 	const { getRootProps, getInputProps } = useDropzone({
 		accept: {
-			'image/*': ['.jpeg', '.jpg', '.png', '.gif'], // Accept only image files
+			'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
 		},
 		onDrop: (acceptedFiles) => {
 			setFiles(acceptedFiles.slice(0, 4))
-			onUpload(acceptedFiles.slice(0, 4));
 		},
 	});
+
+	const handleAccept = () => {
+		onUpload(files);
+		onClose()
+	}
 
 	return (
 		<>
@@ -52,7 +53,7 @@ const UploadMedia: React.FC<Props> = (props) => {
 				</Button>
 			</Box>
 			<Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-				<Button variant="contained" color='success' fullWidth onClick={onClose}>OK</Button>
+				<Button variant="contained" color='success' fullWidth onClick={handleAccept}>OK</Button>
 			</Box>
 		</>
 	);

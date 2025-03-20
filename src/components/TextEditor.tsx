@@ -12,7 +12,6 @@ import AtpAgent from '@atproto/api';
 
 
 interface Props {
-	agent: AtpAgent,
 	outputPost: (content: string) => void,
 	outputImage: (images: any[]) => void,
 	clearEditor: boolean,
@@ -163,7 +162,7 @@ const TextEditor: React.FC<Props> = (props) => {
 
 		<CustomModal show={showInsertImageBox} onClose={() => setShowInsertImageBox(false)}>
 			<Box>
-				<UploadMedia agent={props.agent} onUpload={setImages} onClose={() => setShowInsertImageBox(false)}/>
+				<UploadMedia onUpload={setImages} onClose={() => setShowInsertImageBox(false)}/>
 			</Box>
 		</CustomModal>
     </>
