@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Auth from "./services/Auth";
+import AuthScreen from "./pages/AuthScreen";
 import PostScreen from "./pages/PostScreen";
 import { AtpAgent } from "@atproto/api";
 
@@ -8,7 +8,7 @@ const App: React.FC = () => {
 
   return agent && agent.hasSession ?
   	<PostScreen agent={agent} onLogout={() => setAgent(null)}/> :
-	<Auth onLogin={setAgent} />
+	<AuthScreen onLogin={setAgent} />
 };
 
 export default App;

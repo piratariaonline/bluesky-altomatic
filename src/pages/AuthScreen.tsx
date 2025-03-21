@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Container, TextField, Button, Typography, Box, Alert } from '@mui/material';
 import { AtpAgent, AtpSessionData, CredentialSession } from '@atproto/api';
 import { jwtDecode } from 'jwt-decode';
-import DataEncrypter from '../tools/DataEncrypter';
+import DataEncrypter from '../services/DataEncrypter';
 
 interface Props {
 	onLogin: (agent: AtpAgent) => void
 }
 
-const Auth: React.FC<Props> = (props) => {
+const AuthScreen: React.FC<Props> = (props) => {
 
 	const {onLogin} = props;
 	const securitySvc = new DataEncrypter();
@@ -91,4 +91,4 @@ const Auth: React.FC<Props> = (props) => {
 	);
 };
 
-export default Auth;
+export default AuthScreen;

@@ -12,8 +12,8 @@ import AtpAgent from '@atproto/api';
 
 
 interface Props {
-	outputPost: (content: string) => void,
-	outputImage: (images: any[]) => void,
+	onEditPost: (content: string) => void,
+	onAttachImages: (images: any[]) => void,
 	clearEditor: boolean,
 	rows: number,
 }
@@ -47,7 +47,7 @@ const TextEditor: React.FC<Props> = (props) => {
 	}, [props.clearEditor])
 
 	useEffect(() =>
-		props.outputImage(images),
+		props.onAttachImages(images),
 	[images])
 
 	const renderCounter = () => (
@@ -92,7 +92,7 @@ const TextEditor: React.FC<Props> = (props) => {
         if (value.length <= MAX_CHARACTERS || value.length < editorContent.length) {
 			setEditorContent(value)
 			countCharacters(value)
-			props.outputPost(value)
+			props.onEditPost(value)
 		}
     }
 
@@ -121,7 +121,7 @@ const TextEditor: React.FC<Props> = (props) => {
 				'(',linkUrl,')',
 				prev.slice(end, prev.length),
 			].join('')}`
-			props.outputPost(newVal);
+			props.onEditPost(newVal);
 			return newVal;
 		})
 
