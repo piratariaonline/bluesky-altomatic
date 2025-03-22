@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Container, Button, Typography, Box, Grid2, Avatar} from "@mui/material";
 import { AtpAgent, RichText } from "@atproto/api";
-import TextEditor from "../components/TextEditor";
+import PostEditor from "../components/PostEditor";
 import Card from "@mui/joy/Card";
 import CardContent from "@mui/joy/CardContent";
 import markdownit from 'markdown-it';
@@ -13,6 +13,11 @@ import Loading from "../components/Loading";
 import Profile from "../components/Profile";
 import Preview from '../components/Preview';
 
+export interface FileWithAlt {
+	file: File;
+	alt: string;
+}
+
 const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent, onLogout }) => {
 
     const [post, setPost] = useState<string>('');
@@ -21,7 +26,7 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 	const [clearPost, setClearPost] = useState<boolean>(false);
 	const [postBody, setPostBody] = useState<any>();
     const [preview, setPreview] = useState<string>('');
-	const [files, setFiles] = useState<any[]>([]);
+	const [files, setFiles] = useState<FileWithAlt[]>([]);
 	const [images, setImages] = useState<any[]>([]);
 	const [timerToken, setTimerToken] = useState<any>();
 	const [holdPostButton, setHoldPostButton] = useState<boolean>();
@@ -34,7 +39,7 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 			setProfile(profile.data);
 		}
 		getProfile();
-	}, [])
+	}, []);
 
     const handlePost = async () => {
         try {
@@ -55,24 +60,24 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 
 	const processImages = async () => {
 		try {
-			for (const file of files) {
-				const buffer = await file.arrayBuffer();
+			for (const fileWithAlt of files) {
+				const buffer = await fileWithAlt.file.arrayBuffer();
 				const byteArray = new Uint8Array(buffer);
-				const encoding = file.type;
+				const encoding = fileWithAlt.file.type;
 				const { data } = await agent.uploadBlob(byteArray, { encoding });
 
 				setImages([
 					...images,
 					{
 					imageBlob: {
-						alt: '',
+						alt: fileWithAlt.alt,
 						image: data.blob,
 						// aspectRatio: {
 						// 	width: 1000,
 						// 	height: 500
 						// }
 					},
-					imageFile: file
+					imageFile: fileWithAlt.file
 				}])
 			}
 		} catch (err) {
@@ -116,9 +121,12 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 						}
 					}
 
+					const embed = images ? { $type: 'app.bsky.embed.images', images } : {}
+
 					const postToSend = {
 						text: cleanText,
 						facets: message.facets,
+						embed,
 						createdAt: new Date().toISOString(),
 					}
 
@@ -136,7 +144,7 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 		setPreview(markdown);
 	}
 
-	const procesPreviewImages = () => {
+	const handleRemoveImage = () => {
 		// TODO: Ajustar os processamentos de img para o post
 
 	}
@@ -166,7 +174,7 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 					{/* Editor */}
 					<Grid2>
 						<Box sx={{ mt: {xs: 1, md: 3}, p: {xs: 2, md: 3}, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
-							<TextEditor onEditPost={setPost} onAttachImages={setFiles} clearEditor={clearPost} rows={8} />
+							<PostEditor onEditPost={setPost} onAttachImages={setFiles} clearEditor={clearPost} rows={8} />
 							<Button
 								variant="contained"
 								color="primary"
@@ -206,7 +214,7 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 											</Box>
 										</Box>
 									</Loading>
-									<Preview preview={preview} files={files} />
+									<Preview preview={preview} filesWithAlt={files} onRemoveFile={setFiles} onAltEdit={setFiles}/>
 								</CardContent>
 							</Card>
 						</Box>

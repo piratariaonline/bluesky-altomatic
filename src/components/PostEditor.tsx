@@ -5,15 +5,15 @@ import Textarea from '@mui/joy/Textarea';
 import Typography from '@mui/joy/Typography';
 import { Image, InsertLink } from '@mui/icons-material';
 import CustomModal from './CustomModal';
-import { Button, TextField } from '@mui/material';
+import { TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
 import UploadMedia from './UploadMedia';
-import AtpAgent from '@atproto/api';
+import { FileWithAlt } from '../pages/PostScreen';
 
 
 interface Props {
 	onEditPost: (content: string) => void,
-	onAttachImages: (images: any[]) => void,
+	onAttachImages: (images: FileWithAlt[]) => void,
 	clearEditor: boolean,
 	rows: number,
 }
@@ -23,7 +23,7 @@ interface TextSelection {
 	end: number
 }
 
-const TextEditor: React.FC<Props> = (props) => {
+const PostEditor: React.FC<Props> = (props) => {
 
 	const MD_REGEX = {
 		LINK: /\[(.*?)\]\((.*?)\)/g
@@ -37,7 +37,7 @@ const TextEditor: React.FC<Props> = (props) => {
     const [linkUrl, setLinkUrl] = useState<string>('');
     const [showInsertLinkBox, setShowInsertLinkBox] = useState<boolean>(false);
     const [showInsertImageBox, setShowInsertImageBox] = useState<boolean>(false);
-	const [images, setImages] = useState<any[]>([]);
+	const [images, setImages] = useState<FileWithAlt[]>([]);
 
 	useEffect(() => {
 		if (props.clearEditor) {
@@ -128,45 +128,48 @@ const TextEditor: React.FC<Props> = (props) => {
 		setShowInsertLinkBox(false);
 	}
 
-	const handleUploadImage = () => {
+	const handleUploadImage = (files: File[]) => {
+		const jointImages: FileWithAlt[] = files
+			.slice(0, 4 - images.length)
+			.map(file => ({ file, alt: ''}))
+			.concat(images);
 
+		setImages(jointImages);
 		setShowInsertImageBox(false);
 	}
 
-	useEffect(() => console.log(showInsertLinkBox), [showInsertLinkBox]);
+  	return (
+		<>
+			<Textarea
+				placeholder="Cria sua postagem aqui!"
+				value={editorContent}
+				onChange={handleChange}
+				onSelect={handleSelect}
+				minRows={props.rows}
+				maxRows={props.rows}
+				startDecorator={renderToolbox()}
+				endDecorator={renderCounter()}
+				sx={{ minWidth: 300 }}
+			/>
 
-  return (
-    <>
-		<Textarea
-			placeholder="Cria sua postagem aqui!"
-			value={editorContent}
-			onChange={handleChange}
-			onSelect={handleSelect}
-			minRows={props.rows}
-			maxRows={props.rows}
-			startDecorator={renderToolbox()}
-			endDecorator={renderCounter()}
-			sx={{ minWidth: 300 }}
-		/>
+			<CustomModal show={showInsertLinkBox} onClose={() => setShowInsertLinkBox(false)}>
+				<Typography>Criar link</Typography>
+					<TextField
+						label="URL do link"
+						fullWidth
+						margin="normal"
+						onChange={(e) => setLinkUrl(e.target.value)}
+						onKeyDown={(e) => e.key === 'Enter' && handleCreateLink()}
+					/>
+			</CustomModal>
 
-		<CustomModal show={showInsertLinkBox} onClose={() => setShowInsertLinkBox(false)}>
-			<Typography>Criar link</Typography>
-				<TextField
-					label="URL do link"
-					fullWidth
-					margin="normal"
-					onChange={(e) => setLinkUrl(e.target.value)}
-					onKeyDown={(e) => e.key === 'Enter' && handleCreateLink()}
-				/>
-		</CustomModal>
-
-		<CustomModal show={showInsertImageBox} onClose={() => setShowInsertImageBox(false)}>
-			<Box>
-				<UploadMedia onUpload={setImages} onClose={() => setShowInsertImageBox(false)}/>
-			</Box>
-		</CustomModal>
-    </>
+			<CustomModal show={showInsertImageBox} onClose={() => setShowInsertImageBox(false)}>
+				<Box>
+					<UploadMedia onUpload={handleUploadImage} onClose={() => setShowInsertImageBox(false)}/>
+				</Box>
+			</CustomModal>
+		</>
 	);
 }
 
-export default TextEditor;
+export default PostEditor;

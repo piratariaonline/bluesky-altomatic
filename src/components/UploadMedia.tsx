@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { Box, Button, TextField, Typography } from "@mui/material";
 import { useDropzone } from 'react-dropzone';
-import AtpAgent from "@atproto/api";
-
 interface Props {
 	onUpload: (images: any[]) => void ,
 	onClose: () => void
@@ -16,7 +14,7 @@ const UploadMedia: React.FC<Props> = (props) => {
 
 	const { getRootProps, getInputProps } = useDropzone({
 		accept: {
-			'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
+			'image/*': ['.jpeg', '.jpg', '.png'],
 		},
 		onDrop: (acceptedFiles) => {
 			setFiles(acceptedFiles.slice(0, 4))
