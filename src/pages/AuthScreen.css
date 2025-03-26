@@ -1,0 +1,9 @@
+.auth-card-box {
+	border-radius: 2%;
+	box-shadow: 3%;
+	background-color: white;
+}
+
+.login-button {
+	margin-top: 2%;
+}

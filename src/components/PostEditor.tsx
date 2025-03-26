@@ -25,6 +25,8 @@ interface TextSelection {
 
 const PostEditor: React.FC<Props> = (props) => {
 
+	const { onEditPost, onAttachImages, clearEditor, rows } = props;
+
 	const MD_REGEX = {
 		LINK: /\[(.*?)\]\((.*?)\)/g
 	}
@@ -37,18 +39,15 @@ const PostEditor: React.FC<Props> = (props) => {
     const [linkUrl, setLinkUrl] = useState<string>('');
     const [showInsertLinkBox, setShowInsertLinkBox] = useState<boolean>(false);
     const [showInsertImageBox, setShowInsertImageBox] = useState<boolean>(false);
-	const [images, setImages] = useState<FileWithAlt[]>([]);
+	const [files, setFiles] = useState<FileWithAlt[]>([]);
 
 	useEffect(() => {
-		if (props.clearEditor) {
+		if (clearEditor) {
 			setEditorContent('');
 			setCounter(0);
+			setFiles([]);
 		}
-	}, [props.clearEditor])
-
-	useEffect(() =>
-		props.onAttachImages(images),
-	[images])
+	}, [clearEditor])
 
 	const renderCounter = () => (
 		<Typography level="body-xs" sx={{ ml: 'auto' }}>
@@ -101,7 +100,6 @@ const PostEditor: React.FC<Props> = (props) => {
 		let adjustedCount = rawCount;
 		let match;
 
-		// Despreza caracteres adicionais do markdown de link
 		while ((match = MD_REGEX.LINK.exec(rawText)) !== null) {
 			const matchedLength = match[0].length;
 			const textLength = match[1].length;
@@ -121,7 +119,7 @@ const PostEditor: React.FC<Props> = (props) => {
 				'(',linkUrl,')',
 				prev.slice(end, prev.length),
 			].join('')}`
-			props.onEditPost(newVal);
+			onEditPost(newVal);
 			return newVal;
 		})
 
@@ -129,12 +127,7 @@ const PostEditor: React.FC<Props> = (props) => {
 	}
 
 	const handleUploadImage = (files: File[]) => {
-		const jointImages: FileWithAlt[] = files
-			.slice(0, 4 - images.length)
-			.map(file => ({ file, alt: ''}))
-			.concat(images);
-
-		setImages(jointImages);
+		onAttachImages(files.map(file => ({ file, alt: ''})));
 		setShowInsertImageBox(false);
 	}
 
@@ -165,7 +158,7 @@ const PostEditor: React.FC<Props> = (props) => {
 
 			<CustomModal show={showInsertImageBox} onClose={() => setShowInsertImageBox(false)}>
 				<Box>
-					<UploadMedia onUpload={handleUploadImage} onClose={() => setShowInsertImageBox(false)}/>
+					<UploadMedia onUpload={setFiles} onClose={() => setShowInsertImageBox(false)}/>
 				</Box>
 			</CustomModal>
 		</>

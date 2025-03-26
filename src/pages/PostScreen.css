@@ -1,3 +1,15 @@
+.default-box {
+	border-radius: 2%;
+	box-shadow: 3%;
+	background-color: white;
+}
+
+.editor-box .post-button {
+	margin-top: 2%;
+}
+
+
+
 .preview-text {
 	min-height: 15vh;
 }

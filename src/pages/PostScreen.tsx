@@ -10,15 +10,22 @@ import { ProfileViewDetailed } from "@atproto/api/dist/client/types/app/bsky/act
 import './PostScreen.css';
 import { Send } from "@mui/icons-material";
 import Loading from "../components/Loading";
-import Profile from "../components/Profile";
+import ProfileHeader from "../components/ProfileHeader";
 import Preview from '../components/Preview';
+import CustomModal from "../components/CustomModal";
+import AltTextEditor from "../components/AltTextEditor";
+import ViewportManager from '../services/ViewportManager';
 
 export interface FileWithAlt {
 	file: File;
 	alt: string;
 }
 
+// TODO: O Preview precisa ser limpo depois de realizar post, ele está mantendo texto e imagem 
+
 const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent, onLogout }) => {
+
+	const {SX, Spacing} = ViewportManager;
 
     const [post, setPost] = useState<string>('');
 	const [isPosting, setIsPosting] = useState<boolean>(false);
@@ -27,10 +34,12 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 	const [postBody, setPostBody] = useState<any>();
     const [preview, setPreview] = useState<string>('');
 	const [files, setFiles] = useState<FileWithAlt[]>([]);
-	const [images, setImages] = useState<any[]>([]);
 	const [timerToken, setTimerToken] = useState<any>();
 	const [holdPostButton, setHoldPostButton] = useState<boolean>();
-
+	const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
+	const [showAltEditor, setShowAltEditor] = useState<boolean>(false);
+	const [fileSelected, setFileSelected] = useState<number>();
+	
 	const md = markdownit('commonmark');
 
 	useEffect(() => {
@@ -46,43 +55,51 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 			setHoldPostButton(true);
 			setIsPosting(true);
             if (postBody) {
-				await agent.post(postBody);
+				const post = {...postBody};
+				const postImages = await processImages();
+				post.embed = {
+					$type: "app.bsky.embed.images",
+					images: postImages,
+				}
+				await agent.post(post);
 			}
+        } catch (err) {
+            console.error(`Erro ao postar: ${err}`);
+        } finally {
 			setClearPost(true);
+			setFileSelected(undefined);
 			setPostBody(undefined);
+			setFiles([]);
 			setPreview('');
 			setHoldPostButton(false);
 			setIsPosting(false);
-        } catch (err) {
-            console.error(`Erro ao postar: ${err}`);
-        }
+		}
     };
 
 	const processImages = async () => {
-		try {
-			for (const fileWithAlt of files) {
-				const buffer = await fileWithAlt.file.arrayBuffer();
-				const byteArray = new Uint8Array(buffer);
-				const encoding = fileWithAlt.file.type;
-				const { data } = await agent.uploadBlob(byteArray, { encoding });
+		const images = [];
+		if (files.length > 0) {
+			try {
+				for (const fileWithAlt of files) {
+					const buffer = await fileWithAlt.file.arrayBuffer();
+					const byteArray = new Uint8Array(buffer);
+					const encoding = fileWithAlt.file.type;
+					const { data } = await agent.uploadBlob(byteArray, { encoding });
 
-				setImages([
-					...images,
-					{
-					imageBlob: {
-						alt: fileWithAlt.alt,
-						image: data.blob,
-						// aspectRatio: {
-						// 	width: 1000,
-						// 	height: 500
-						// }
-					},
-					imageFile: fileWithAlt.file
-				}])
-			}
-		} catch (err) {
-			console.log(err);
+					images.push({
+							alt: fileWithAlt.alt,
+							image: data.blob,
+							// aspectRatio: {
+							// 	width: 1000,
+							// 	height: 500
+							// }
+					})
+				}
+			} catch (err) {
+				console.log(err);
+			}			
 		}
+		return images;
 	}
 
 	const processPostContent = () => {
@@ -121,12 +138,10 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 						}
 					}
 
-					const embed = images ? { $type: 'app.bsky.embed.images', images } : {}
-
 					const postToSend = {
 						text: cleanText,
 						facets: message.facets,
-						embed,
+						embed: null,
 						createdAt: new Date().toISOString(),
 					}
 
@@ -144,15 +159,23 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 		setPreview(markdown);
 	}
 
-	const handleRemoveImage = () => {
-		// TODO: Ajustar os processamentos de img para o post
-
-	}
-
 	const handleLogout = async () => {
 		await agent.logout();
 		localStorage.removeItem(`altomatic-${agent.serviceUrl.origin}`);
 		onLogout();
+	}
+
+	const handleRemoveFiles = () => {
+		if (fileSelected !== undefined) {
+			const toRemove = [...files];
+			toRemove.splice(fileSelected, 1);
+			setFiles(toRemove);
+		}
+		setShowConfirmDelete(false);
+	}
+
+	const handleAltTextEdit = (files: FileWithAlt[]) => {
+		setFileSelected
 	}
 
 	useEffect(() => {
@@ -164,23 +187,15 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 	return (
 		<>
 			<Container maxWidth="lg">
-				<Grid2 container spacing={{ xs: 0, md: 3}} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 2fr 1.5fr' } }}>
-					{/* Perfil */}
-					<Grid2>
-						<Box sx={{ mt: {xs: 1, md: 3}, p: {xs: 2, md: 3}, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
-							<Profile profile={profile} onLogout={handleLogout}/>
-						</Box>
-					</Grid2>
+				<Grid2 container spacing={Spacing.PostScreen.ContainerGrid} sx={SX.PostScreen.ContainerGrid}>
 					{/* Editor */}
 					<Grid2>
-						<Box sx={{ mt: {xs: 1, md: 3}, p: {xs: 2, md: 3}, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
+						<Box className='default-box editor-box' sx={SX.PostScreen.EditorBox}>
 							<PostEditor onEditPost={setPost} onAttachImages={setFiles} clearEditor={clearPost} rows={8} />
-							<Button
-								variant="contained"
-								color="primary"
-								endIcon={isPosting ? undefined : <Send />}
+							<Button variant="contained" color="primary"
+								className='post-button'
+								endIcon={!isPosting && <Send />}
 								fullWidth
-								sx={{ mt: 2 }}
 								onClick={handlePost}
 								disabled={holdPostButton}
 							>
@@ -190,37 +205,42 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 					</Grid2>
 					{/* Pre visualizacao */}
 					<Grid2>
-						<Box sx={{ mt: {xs: 1, md: 3}, p: {xs: 2, md: 3}, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
+						<Box className='default-box preview-box' sx={SX.PostScreen.PreviewBox}>
 							<Card variant="outlined">
 								<CardContent>
-									<Loading isLoading={!profile}>
-										<Box sx={{ display: 'flex' }}>
-											{
-												profile && profile.avatar && (
-													<Avatar
-														alt={profile.displayName}
-														src={profile.avatar}
-														sx={{ width: 40, height: 40, mb: 2, border: 'solid 1px grey' }}
-													/>
-												)
-											}
-											<Box sx={{ display: 'block', marginLeft: '10px' }}>
-												<Typography variant="body1" sx={{ fontSize: '14px' }}>
-													<strong>{profile ? profile.displayName : '---'}</strong>
-												</Typography>
-												<Typography variant="body1" sx={{ fontSize: '12px' }}>
-													@{profile ? profile.handle : '---'}
-												</Typography>
-											</Box>
-										</Box>
-									</Loading>
-									<Preview preview={preview} filesWithAlt={files} onRemoveFile={setFiles} onAltEdit={setFiles}/>
+									<ProfileHeader profile={profile} onLogout={handleLogout} />
+									<Preview preview={preview} files={files}
+										onRemoveFile={(index) => {
+											setFileSelected(index);
+											setShowConfirmDelete(true);
+										}}
+										onAltEdit={(index) => {
+											setFileSelected(index);
+											setShowAltEditor(true);
+										}}
+									/>
 								</CardContent>
 							</Card>
 						</Box>
 					</Grid2>
 				</Grid2>
 			</Container>
+			<CustomModal show={showAltEditor} onClose={() => setShowAltEditor(false)}>
+			{
+				files && fileSelected !== undefined && files[fileSelected] ? (
+					<AltTextEditor
+						files={files}
+						fileIndex={fileSelected}
+						onSetAltText={handleAltTextEdit}
+						onClose={() => setShowAltEditor(false)}
+					/>
+				) : (<></>)
+			}
+			</CustomModal>
+			<CustomModal show={showConfirmDelete} onClose={() => setShowConfirmDelete(false)}>
+				<Typography>Remover esta imagem?</Typography>
+				<Button color='success' onClick={handleRemoveFiles}>OK</Button>
+			</CustomModal>
 		</>
 	);
 };

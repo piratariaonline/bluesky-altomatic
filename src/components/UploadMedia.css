@@ -1,0 +1,17 @@
+.upload-box {
+	border: 2px dashed #ccc;
+	border-radius: 4px;
+	padding: 20px;
+	text-align: center;
+	cursor: pointer;
+}
+
+.upload-box .select-button {
+	margin-top: 2%;
+}
+
+.confirm-button {
+	display: flex;
+	justify-content: center;
+	margin-top: 2%;
+}
