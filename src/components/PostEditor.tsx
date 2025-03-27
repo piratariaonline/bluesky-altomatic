@@ -41,10 +41,8 @@ const PostEditor: React.FC<Props> = (props) => {
     const [showInsertImageBox, setShowInsertImageBox] = useState<boolean>(false);
 
 	useEffect(() => {
-		if (clearEditor) {
-			setEditorContent('');
-			setCounter(0);
-		}
+		if (clearEditor)
+			handleChange({target: { value: ''}})
 	}, [clearEditor])
 
 	const renderCounter = () => (

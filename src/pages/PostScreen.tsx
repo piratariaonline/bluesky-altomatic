@@ -21,8 +21,6 @@ export interface FileWithAlt {
 	alt: string;
 }
 
-// TODO: O Preview precisa ser limpo depois de realizar post, ele está mantendo texto e imagem 
-
 const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent, onLogout }) => {
 
 	const {SX, Spacing} = ViewportManager;
