@@ -39,13 +39,11 @@ const PostEditor: React.FC<Props> = (props) => {
     const [linkUrl, setLinkUrl] = useState<string>('');
     const [showInsertLinkBox, setShowInsertLinkBox] = useState<boolean>(false);
     const [showInsertImageBox, setShowInsertImageBox] = useState<boolean>(false);
-	const [files, setFiles] = useState<FileWithAlt[]>([]);
 
 	useEffect(() => {
 		if (clearEditor) {
 			setEditorContent('');
 			setCounter(0);
-			setFiles([]);
 		}
 	}, [clearEditor])
 
@@ -158,7 +156,7 @@ const PostEditor: React.FC<Props> = (props) => {
 
 			<CustomModal show={showInsertImageBox} onClose={() => setShowInsertImageBox(false)}>
 				<Box>
-					<UploadMedia onUpload={setFiles} onClose={() => setShowInsertImageBox(false)}/>
+					<UploadMedia onUpload={handleUploadImage} onClose={() => setShowInsertImageBox(false)}/>
 				</Box>
 			</CustomModal>
 		</>
