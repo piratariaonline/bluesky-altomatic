@@ -1,52 +1,57 @@
 import React, { useState } from "react";
-import { Button, TextField } from "@mui/material";
-import AtpAgent from "@atproto/api";
+import { Box, Button, Typography } from "@mui/material";
+import { useDropzone } from 'react-dropzone';
+import './UploadMedia.css';
 
-const UploadMedia: React.FC<{ agent: AtpAgent, onUpload: (images: any[]) => void }> = ({ agent, onUpload }) => {
-	const [files, setFiles] = useState<File[]>([]);
 
-	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		if (event.target.files && event.target.files.length > 1) {
-			const extractedFiles: File[] = [];
-			for (let i = 0; i < 4; i++)
-				extractedFiles.push(event.target.files[i]);
-			
-			setFiles(extractedFiles);
-		}
-	};
+interface Props {
+	onUpload: (images: any[]) => void ,
+	onClose: () => void
+}
 
-	const handleUpload = async () => {
-		if (files.length === 0) return;
+const UploadMedia: React.FC<Props> = (props) => {
 
-		const images = [];
+	const { onUpload, onClose } = props;
 
-		try {
-			for (const file of files) {
-				const buffer = await file.arrayBuffer();
-				const byteArray = new Uint8Array(buffer);
-				const encoding = file.type;
-				const { data } = await agent.uploadBlob(byteArray, { encoding });
+	const [files, setFiles] = useState<any[]>([])
 
-				images.push({
-					alt: '',
-					image: data.blob,
-					// aspectRatio: {
-					// 	width: 1000,
-					// 	height: 500
-					// }
-				})
-			}
-			onUpload(images);
-		} catch (error) {
-			console.error("Upload failed", error);
-		}
-	};
+	const { getRootProps, getInputProps } = useDropzone({
+		accept: {
+			'image/*': ['.jpeg', '.jpg', '.png'],
+		},
+		onDrop: (acceptedFiles) =>
+			// Incrementa os arquivos caso busque novamente tendo já carregado
+			// files.length < 4 && setFiles((prev) => [...prev].concat(acceptedFiles).slice(0, 4)),
+
+			// Substitui o que já existe pelo novo carregado
+			setFiles(acceptedFiles.slice(0, 4)),
+	});
+
+	const handleAccept = () => {
+		onUpload(files);
+		setFiles([]);
+		onClose()
+	}
 
 	return (
-		<div>
-			<input type="file" multiple accept="image/*,video/*" onChange={handleFileChange} />
-			<Button onClick={handleUpload}>Enviar</Button>
-		</div>
+		<>
+			<Box className='upload-box' {...getRootProps()}>
+				<input {...getInputProps()} />
+				<Typography color='textSecondary'>
+					{
+						files.length > 0
+							? `${files.length} image${files.length > 1 ? 'ns' : 'm'} selecionada${files.length > 1 ? 's' : ''}`
+							: 'Arraste e solte imagens para carregar, ou clique para escolher'
+					}
+				</Typography>
+				<Button variant="contained" color='info' className='select-button'>
+					Escolher imagens
+				</Button>
+			</Box>
+			<Box className='confirm-button'>
+				<Button variant="contained" color='success' fullWidth onClick={handleAccept}>OK</Button>
+			</Box>
+		</>
 	);
 };
 

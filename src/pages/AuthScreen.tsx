@@ -2,13 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Container, TextField, Button, Typography, Box, Alert } from '@mui/material';
 import { AtpAgent, AtpSessionData, CredentialSession } from '@atproto/api';
 import { jwtDecode } from 'jwt-decode';
-import DataEncrypter from '../tools/DataEncrypter';
+import DataEncrypter from '../services/DataEncrypter';
+import ViewportManager from '../services/ViewportManager';
+import './AuthScreen.css';
 
 interface Props {
 	onLogin: (agent: AtpAgent) => void
 }
 
-const Auth: React.FC<Props> = (props) => {
+const AuthScreen: React.FC<Props> = (props) => {
+
+	const { SX } = ViewportManager;
 
 	const {onLogin} = props;
 	const securitySvc = new DataEncrypter();
@@ -67,8 +71,8 @@ const Auth: React.FC<Props> = (props) => {
 
 	return (
 		<Container maxWidth="sm">
-			<Box sx={{ mt: 5, p: 3, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
-				<Typography variant="h4" gutterBottom>BSky ALTomatic</Typography>
+			<Box className='auth-card-box' sx={SX.AuthCardBox}>
+				<Typography variant="h4" gutterBottom >Bluesky Tools</Typography>
 				{error && <Alert severity="error">{error}</Alert>}
 				<TextField
 					label="Usuário"
@@ -85,10 +89,10 @@ const Auth: React.FC<Props> = (props) => {
 					value={appKey}
 					onChange={(e) => setAppKey(e.target.value)}
 				/>
-				<Button variant="contained" color="primary" fullWidth sx={{ mt: 2 }} onClick={handleLogin}>Login</Button>
+				<Button variant="contained" color="primary" fullWidth className='login-button' onClick={handleLogin}>Login</Button>
 			</Box>
 		</Container>
 	);
 };
 
-export default Auth;
+export default AuthScreen;

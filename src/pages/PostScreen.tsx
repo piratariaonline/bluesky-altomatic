@@ -1,18 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { Container, Button, Typography, Box, Grid2, Avatar, CircularProgress} from "@mui/material";
+import { Container, Button, Typography, Box, Grid2, Avatar} from "@mui/material";
 import { AtpAgent, RichText } from "@atproto/api";
-import TextEditor from "../components/TextEditor";
+import PostEditor from "../components/PostEditor";
 import Card from "@mui/joy/Card";
 import CardContent from "@mui/joy/CardContent";
 import markdownit from 'markdown-it';
-import { Interweave } from "interweave";
-import processFacetsFromMarkdown from "../tools/FacetsProcessor";
+import processFacetsFromMarkdown from "../services/FacetsProcessor";
 import { ProfileViewDetailed } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
 import './PostScreen.css';
-import { Logout, Send } from "@mui/icons-material";
+import { Send } from "@mui/icons-material";
 import Loading from "../components/Loading";
+import ProfileHeader from "../components/ProfileHeader";
+import Preview from '../components/Preview';
+import CustomModal from "../components/CustomModal";
+import AltTextEditor from "../components/AltTextEditor";
+import ViewportManager from '../services/ViewportManager';
+
+export interface FileWithAlt {
+	file: File;
+	alt: string;
+}
 
 const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent, onLogout }) => {
+
+	const {SX, Spacing} = ViewportManager;
 
     const [post, setPost] = useState<string>('');
 	const [isPosting, setIsPosting] = useState<boolean>(false);
@@ -20,9 +31,13 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 	const [clearPost, setClearPost] = useState<boolean>(false);
 	const [postBody, setPostBody] = useState<any>();
     const [preview, setPreview] = useState<string>('');
+	const [files, setFiles] = useState<FileWithAlt[]>([]);
 	const [timerToken, setTimerToken] = useState<any>();
 	const [holdPostButton, setHoldPostButton] = useState<boolean>();
-
+	const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
+	const [showAltEditor, setShowAltEditor] = useState<boolean>(false);
+	const [fileSelected, setFileSelected] = useState<number>();
+	
 	const md = markdownit('commonmark');
 
 	useEffect(() => {
@@ -31,23 +46,59 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 			setProfile(profile.data);
 		}
 		getProfile();
-	}, [])
+	}, []);
 
     const handlePost = async () => {
         try {
 			setHoldPostButton(true);
 			setIsPosting(true);
-            if (postBody)
-            	await agent.post(postBody);
+            if (postBody) {
+				const post = {...postBody};
+				const postImages = await processImages();
+				post.embed = {
+					$type: "app.bsky.embed.images",
+					images: postImages,
+				}
+				await agent.post(post);
+			}
+        } catch (err) {
+            console.error(`Erro ao postar: ${err}`);
+        } finally {
 			setClearPost(true);
+			setFileSelected(undefined);
 			setPostBody(undefined);
+			setFiles([]);
 			setPreview('');
 			setHoldPostButton(false);
 			setIsPosting(false);
-        } catch (err) {
-            console.error(`Erro ao postar: ${err}`);
-        }
+		}
     };
+
+	const processImages = async () => {
+		const images = [];
+		if (files.length > 0) {
+			try {
+				for (const fileWithAlt of files) {
+					const buffer = await fileWithAlt.file.arrayBuffer();
+					const byteArray = new Uint8Array(buffer);
+					const encoding = fileWithAlt.file.type;
+					const { data } = await agent.uploadBlob(byteArray, { encoding });
+
+					images.push({
+							alt: fileWithAlt.alt,
+							image: data.blob,
+							// aspectRatio: {
+							// 	width: 1000,
+							// 	height: 500
+							// }
+					})
+				}
+			} catch (err) {
+				console.log(err);
+			}			
+		}
+		return images;
+	}
 
 	const processPostContent = () => {
 		const message = new RichText({ text: post });
@@ -88,6 +139,7 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 					const postToSend = {
 						text: cleanText,
 						facets: message.facets,
+						embed: null,
 						createdAt: new Date().toISOString(),
 					}
 
@@ -111,6 +163,19 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 		onLogout();
 	}
 
+	const handleRemoveFiles = () => {
+		if (fileSelected !== undefined) {
+			const toRemove = [...files];
+			toRemove.splice(fileSelected, 1);
+			setFiles(toRemove);
+		}
+		setShowConfirmDelete(false);
+	}
+
+	const handleAltTextEdit = (files: FileWithAlt[]) => {
+		setFileSelected
+	}
+
 	useEffect(() => {
 		setClearPost(false);
 		processPostContent();
@@ -118,110 +183,64 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 	}, [post]);
 
 	return (
-		<Container maxWidth="lg">
-			<Grid2 container spacing={{ xs: 0, md: 3}} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 2fr 1.5fr' } }}>
-				<Grid2>
-					<Box sx={{ mt: {xs: 1, md: 3}, p: {xs: 2, md: 3}, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
-						<Loading isLoading={!profile}>
-							<Box
-								sx={{
-								display: 'flex',
-								flexDirection: { xs: 'row', md: 'column' }, // Row for mobile, column for desktop
-								alignItems: { xs: 'center', md: 'flex-start' }, // Center align for mobile, left align for desktop
-								gap: { xs: 2, md: 0 }, // Add gap between items for mobile
-								}}
+		<>
+			<Container maxWidth="lg">
+				<Grid2 container spacing={Spacing.PostScreen.ContainerGrid} sx={SX.PostScreen.ContainerGrid}>
+					{/* Editor */}
+					<Grid2>
+						<Box className='default-box editor-box' sx={SX.PostScreen.EditorBox}>
+							<PostEditor onEditPost={setPost} onAttachImages={setFiles} clearEditor={clearPost} rows={8} />
+							<Button variant="contained" color="primary"
+								className='post-button'
+								endIcon={!isPosting && <Send />}
+								fullWidth
+								onClick={handlePost}
+								disabled={holdPostButton}
 							>
-								{
-									profile && profile.avatar && (
-										<Avatar
-											alt={profile.displayName}
-											src={profile.avatar}
-											sx={{
-											width: { xs: 50, md: 100 }, // Smaller avatar for mobile
-											height: { xs: 50, md: 100 },
-											mb: { xs: 0, md: 2 }, // No margin bottom for mobile
-											}}
-										/>
-									)
-								}
-
-								<Box sx={{ flexGrow: 1 }}>
-									<Typography variant="h5" sx={{ fontSize: { xs: '1.2rem', md: '1.5rem' } }}>
-										{profile ? profile.displayName : '---'}
-									</Typography>
-									<Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', md: '1rem' } }}>
-										<strong>@{profile ? profile.handle : '---'}</strong>
-									</Typography>
-								</Box>
-
-								<Button
-									variant="contained"
-									color="error"
-									sx={{
-										minWidth: { xs: 'auto', md: '100%' }, // Auto width for mobile, full width for desktop
-										p: { xs: 1, md: 2 }, // Smaller padding for mobile
-										mt: { xs: 0, md: 2 }, // No margin top for mobile
-									}}
-									onClick={handleLogout}
-								>
-									<Logout />
-									<Box sx={{ display: { xs: 'none', md: 'block' }, ml: 1 }}>
-										Sair
-									</Box>
-								</Button>
-							</Box>
-						</Loading>
-					</Box>
+								<Loading isLoading={isPosting}>Postar</Loading>
+							</Button>
+						</Box>
+					</Grid2>
+					{/* Pre visualizacao */}
+					<Grid2>
+						<Box className='default-box preview-box' sx={SX.PostScreen.PreviewBox}>
+							<Card variant="outlined">
+								<CardContent>
+									<ProfileHeader profile={profile} onLogout={handleLogout} />
+									<Preview preview={preview} files={files}
+										onRemoveFile={(index) => {
+											setFileSelected(index);
+											setShowConfirmDelete(true);
+										}}
+										onAltEdit={(index) => {
+											setFileSelected(index);
+											setShowAltEditor(true);
+										}}
+									/>
+								</CardContent>
+							</Card>
+						</Box>
+					</Grid2>
 				</Grid2>
-				<Grid2>
-					<Box sx={{ mt: {xs: 1, md: 3}, p: {xs: 2, md: 3}, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
-						<TextEditor agent={agent} outputPost={setPost} clearEditor={clearPost} rows={8} />
-						<Button
-							variant="contained"
-							color="primary"
-							endIcon={isPosting ? undefined : <Send />}
-							fullWidth
-							sx={{ mt: 2 }}
-							onClick={handlePost}
-							disabled={holdPostButton}
-						>
-							<Loading isLoading={isPosting}>Postar</Loading>
-						</Button>
-					</Box>
-				</Grid2>
-				<Grid2>
-					<Box sx={{ mt: {xs: 1, md: 3}, p: {xs: 2, md: 3}, borderRadius: 2, boxShadow: 3, bgcolor: "white" }}>
-						<Card variant="outlined">
-							<CardContent>
-								<Loading isLoading={!profile}>
-									<Box sx={{ display: 'flex' }}>
-										{
-											profile && profile.avatar && (
-												<Avatar
-													alt={profile.displayName}
-													src={profile.avatar}
-													sx={{ width: 40, height: 40, mb: 2, border: 'solid 1px grey' }}
-												/>
-											)
-										}
-										<Box sx={{ display: 'block', marginLeft: '10px' }}>
-											<Typography variant="body1" sx={{ fontSize: '14px' }}>
-												<strong>{profile ? profile.displayName : '---'}</strong>
-											</Typography>
-											<Typography variant="body1" sx={{ fontSize: '12px' }}>
-												@{profile ? profile.handle : '---'}
-											</Typography>
-										</Box>
-									</Box>
-									<Interweave className={'preview-text'} content={preview} />
-								</Loading>
-							</CardContent>
-						</Card>
-					</Box>
-				</Grid2>
-			</Grid2>
-		</Container>
-	  );
+			</Container>
+			<CustomModal show={showAltEditor} onClose={() => setShowAltEditor(false)}>
+			{
+				files && fileSelected !== undefined && files[fileSelected] ? (
+					<AltTextEditor
+						files={files}
+						fileIndex={fileSelected}
+						onSetAltText={handleAltTextEdit}
+						onClose={() => setShowAltEditor(false)}
+					/>
+				) : (<></>)
+			}
+			</CustomModal>
+			<CustomModal show={showConfirmDelete} onClose={() => setShowConfirmDelete(false)}>
+				<Typography>Remover esta imagem?</Typography>
+				<Button color='success' onClick={handleRemoveFiles}>OK</Button>
+			</CustomModal>
+		</>
+	);
 };
 
 export default PostScreen;

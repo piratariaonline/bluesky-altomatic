@@ -5,15 +5,15 @@ import Textarea from '@mui/joy/Textarea';
 import Typography from '@mui/joy/Typography';
 import { Image, InsertLink } from '@mui/icons-material';
 import CustomModal from './CustomModal';
-import { Button, TextField } from '@mui/material';
+import { TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
 import UploadMedia from './UploadMedia';
-import AtpAgent from '@atproto/api';
+import { FileWithAlt } from '../pages/PostScreen';
 
 
 interface Props {
-	agent: AtpAgent,
-	outputPost: (content: string) => void,
+	onEditPost: (content: string) => void,
+	onAttachImages: (images: FileWithAlt[]) => void,
 	clearEditor: boolean,
 	rows: number,
 }
@@ -23,7 +23,9 @@ interface TextSelection {
 	end: number
 }
 
-const TextEditor: React.FC<Props> = (props) => {
+const PostEditor: React.FC<Props> = (props) => {
+
+	const { onEditPost, onAttachImages, clearEditor, rows } = props;
 
 	const MD_REGEX = {
 		LINK: /\[(.*?)\]\((.*?)\)/g
@@ -39,12 +41,9 @@ const TextEditor: React.FC<Props> = (props) => {
     const [showInsertImageBox, setShowInsertImageBox] = useState<boolean>(false);
 
 	useEffect(() => {
-		if (props.clearEditor) {
-			setEditorContent('');
-			setCounter(0);
-		}
-			
-	}, [props.clearEditor])
+		if (clearEditor)
+			handleChange({target: { value: ''}})
+	}, [clearEditor])
 
 	const renderCounter = () => (
 		<Typography level="body-xs" sx={{ ml: 'auto' }}>
@@ -88,7 +87,7 @@ const TextEditor: React.FC<Props> = (props) => {
         if (value.length <= MAX_CHARACTERS || value.length < editorContent.length) {
 			setEditorContent(value)
 			countCharacters(value)
-			props.outputPost(value)
+			props.onEditPost(value)
 		}
     }
 
@@ -97,7 +96,6 @@ const TextEditor: React.FC<Props> = (props) => {
 		let adjustedCount = rawCount;
 		let match;
 
-		// Despreza caracteres adicionais do markdown de link
 		while ((match = MD_REGEX.LINK.exec(rawText)) !== null) {
 			const matchedLength = match[0].length;
 			const textLength = match[1].length;
@@ -117,51 +115,50 @@ const TextEditor: React.FC<Props> = (props) => {
 				'(',linkUrl,')',
 				prev.slice(end, prev.length),
 			].join('')}`
-			props.outputPost(newVal);
+			onEditPost(newVal);
 			return newVal;
 		})
 
 		setShowInsertLinkBox(false);
 	}
 
-	const handleUploadImage = () => {
-
+	const handleUploadImage = (files: File[]) => {
+		onAttachImages(files.map(file => ({ file, alt: ''})));
 		setShowInsertImageBox(false);
 	}
 
-	useEffect(() => console.log(showInsertLinkBox), [showInsertLinkBox]);
+  	return (
+		<>
+			<Textarea
+				placeholder="Cria sua postagem aqui!"
+				value={editorContent}
+				onChange={handleChange}
+				onSelect={handleSelect}
+				minRows={props.rows}
+				maxRows={props.rows}
+				startDecorator={renderToolbox()}
+				endDecorator={renderCounter()}
+				sx={{ minWidth: 300 }}
+			/>
 
-  return (
-    <>
-		<Textarea
-			placeholder="Cria sua postagem aqui!"
-			value={editorContent}
-			onChange={handleChange}
-			onSelect={handleSelect}
-			minRows={props.rows}
-			maxRows={props.rows}
-			startDecorator={renderToolbox()}
-			endDecorator={renderCounter()}
-			sx={{ minWidth: 300 }}
-		/>
+			<CustomModal show={showInsertLinkBox} onClose={() => setShowInsertLinkBox(false)}>
+				<Typography>Criar link</Typography>
+					<TextField
+						label="URL do link"
+						fullWidth
+						margin="normal"
+						onChange={(e) => setLinkUrl(e.target.value)}
+						onKeyDown={(e) => e.key === 'Enter' && handleCreateLink()}
+					/>
+			</CustomModal>
 
-		<CustomModal show={showInsertLinkBox} onClose={() => setShowInsertLinkBox(false)}>
-			<Typography>Criar link</Typography>
-				<TextField
-					label="URL do link"
-					fullWidth
-					margin="normal"
-					onChange={(e) => setLinkUrl(e.target.value)}
-					onKeyDown={(e) => e.key === 'Enter' && handleCreateLink()}
-				/>
-		</CustomModal>
-
-		<CustomModal show={showInsertImageBox} onClose={() => setShowInsertImageBox(false)}>
-			<Typography>Inserir imagem</Typography>
-				<UploadMedia agent={props.agent} onUpload={() => {}} />
-		</CustomModal>
-    </>
+			<CustomModal show={showInsertImageBox} onClose={() => setShowInsertImageBox(false)}>
+				<Box>
+					<UploadMedia onUpload={handleUploadImage} onClose={() => setShowInsertImageBox(false)}/>
+				</Box>
+			</CustomModal>
+		</>
 	);
 }
 
-export default TextEditor;
+export default PostEditor;
