@@ -72,7 +72,9 @@ const AuthScreen: React.FC<Props> = (props) => {
 	return (
 		<Container maxWidth="sm">
 			<Box className='auth-card-box' sx={SX.AuthCardBox}>
-				<Typography variant="h4" gutterBottom >Bluesky Tools</Typography>
+				<Typography variant="h4" gutterBottom sx={{ textAlign: 'center'}}>
+					Bluesky Tools
+				</Typography>
 				{error && <Alert severity="error">{error}</Alert>}
 				<TextField
 					label="Usuário"

@@ -1,0 +1,20 @@
+.editor-toolbox {
+	display: flex;
+	gap: 0.5%;
+	flex: 1;
+}
+
+.text-editor {
+	min-width: 300px; 	
+}
+
+.create-link-box {
+	display: flex;
+	align-items: flex-end;
+	gap: 2%; 
+}
+
+.create-link-box .ok-btn {
+	height: 40px;
+	min-width: 80px;
+}

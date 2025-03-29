@@ -2,6 +2,7 @@ import { DeleteForever } from "@mui/icons-material";
 import { Box, Tooltip } from "@mui/material";
 import { Interweave } from "interweave";
 import { FileWithAlt } from "../pages/PostScreen";
+import './Preview.css';
 
 interface Props {
 	preview: string;
@@ -16,38 +17,23 @@ const Preview: React.FC<Props> = (props) => {
 	
 	return (
 		<>
-			<Interweave className={'preview-text'} content={preview} />
-			<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent:'center' }}>
+			<Interweave className='preview-text' content={preview} />
+			<Box className='preview-images-container'>
 			{
 				files && files.map((fileWithAlt, index) => (
-					<Box
-						key={index}
-						sx={{
-							border: '1px solid #ccc',
-							borderRadius: '4px',
-							padding: '0',
-							textAlign: 'center',
-							overflow: 'hidden',
-							width: '120px',
-							height: '80px',
-							marginTop: '10px'
-						}}
-					>
+					<Box key={`preview-image-box-${index}`} className='preview-image-box'>
 						<div className='preview-image-toolbar'>
-							<span className='alt-btn' onClick={() => onAltEdit(index)}>+ ALT</span>
-							<DeleteForever fontSize='small' color='error' style={{
-								backgroundColor: '#444444',
-								borderRadius: '4px',
-								opacity: 0.7,
-								cursor: 'pointer'
-							}} onClick={() => onRemoveFile(index)}/>
+							<Tooltip arrow title={`${fileWithAlt.alt === '' ? 'Adicionar' : 'Editar'} texto alternativo`}>
+								<span className='alt-btn' onClick={() => onAltEdit(index)}>
+									{fileWithAlt.alt === '' ? '+' : '✓'} ALT
+								</span>
+							</Tooltip>
+							<Tooltip arrow title='Remover imagem'>
+								<DeleteForever className='del-btn' onClick={() => onRemoveFile(index)}/>
+							</Tooltip>
 						</div>
 						<Tooltip arrow title={fileWithAlt.alt} placement='top-start'>
-							<img
-								src={URL.createObjectURL(fileWithAlt.file)}
-								alt={fileWithAlt.alt}
-								style={{maxWidth: '100x', maxHeight: '100px'}}
-							/>
+							<img src={URL.createObjectURL(fileWithAlt.file)} alt={fileWithAlt.alt}/>
 						</Tooltip>
 					</Box>
 				))

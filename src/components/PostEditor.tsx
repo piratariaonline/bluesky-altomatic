@@ -2,14 +2,14 @@ import * as React from 'react';
 import Box from '@mui/joy/Box';
 import IconButton from '@mui/joy/IconButton';
 import Textarea from '@mui/joy/Textarea';
-import Typography from '@mui/joy/Typography';
 import { Image, InsertLink } from '@mui/icons-material';
 import CustomModal from './CustomModal';
-import { TextField } from '@mui/material';
+import { Button, TextField, Tooltip } from '@mui/material';
 import { useEffect, useState } from 'react';
 import UploadMedia from './UploadMedia';
 import { FileWithAlt } from '../pages/PostScreen';
-
+import CharCounter from './CharCounter';
+import './PostEditor.css';
 
 interface Props {
 	onEditPost: (content: string) => void,
@@ -40,17 +40,6 @@ const PostEditor: React.FC<Props> = (props) => {
     const [showInsertLinkBox, setShowInsertLinkBox] = useState<boolean>(false);
     const [showInsertImageBox, setShowInsertImageBox] = useState<boolean>(false);
 
-	useEffect(() => {
-		if (clearEditor)
-			handleChange({target: { value: ''}})
-	}, [clearEditor])
-
-	const renderCounter = () => (
-		<Typography level="body-xs" sx={{ ml: 'auto' }}>
-			{counter} caracter{counter > 1 && 'es'}
-		</Typography>
-	)
-
 	const renderToolbox = () => {
 		const handleURLonClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
 			event.currentTarget.blur();
@@ -63,13 +52,17 @@ const PostEditor: React.FC<Props> = (props) => {
 		}
 
 		return (
-			<Box sx={{ display: 'flex', gap: 0.5, flex: 1 }}>
-			<IconButton variant="outlined" color="neutral" onClick={handleURLonClick} title='URL'>
-				<InsertLink/>
-			</IconButton>
-			<IconButton variant="outlined" color="neutral" onClick={handleImageonClick} title='Imagens'>
-				<Image/>
-			</IconButton>
+			<Box className='editor-toolbox'>
+				<Tooltip arrow title='Criar link' placement='top'>
+					<IconButton variant="outlined" color="neutral" onClick={handleURLonClick}>
+						<InsertLink/>
+					</IconButton>
+				</Tooltip>
+				<Tooltip arrow title='Inserir imagens' placement='top'>
+					<IconButton variant="outlined" color="neutral" onClick={handleImageonClick}>
+						<Image/>
+					</IconButton>
+				</Tooltip>
 			</Box>
 		)
 	}
@@ -127,35 +120,35 @@ const PostEditor: React.FC<Props> = (props) => {
 		setShowInsertImageBox(false);
 	}
 
+	const handleClearEditor = () => {
+		if (clearEditor)
+			handleChange({target: { value: ''}})
+	}
+	useEffect(handleClearEditor, [clearEditor]);
+
   	return (
 		<>
 			<Textarea
-				placeholder="Cria sua postagem aqui!"
+				className='text-editor'
+				placeholder='Cria sua postagem aqui!'
 				value={editorContent}
 				onChange={handleChange}
 				onSelect={handleSelect}
-				minRows={props.rows}
-				maxRows={props.rows}
+				minRows={rows}
+				maxRows={rows}
 				startDecorator={renderToolbox()}
-				endDecorator={renderCounter()}
-				sx={{ minWidth: 300 }}
+				endDecorator={<CharCounter count={counter}/>}
 			/>
 
 			<CustomModal show={showInsertLinkBox} onClose={() => setShowInsertLinkBox(false)}>
-				<Typography>Criar link</Typography>
-					<TextField
-						label="URL do link"
-						fullWidth
-						margin="normal"
-						onChange={(e) => setLinkUrl(e.target.value)}
-						onKeyDown={(e) => e.key === 'Enter' && handleCreateLink()}
-					/>
+				<Box className='create-link-box'>
+					<TextField fullWidth label="URL do link" size="small" onChange={(e) => setLinkUrl(e.target.value)}/>
+					<Button className='ok-btn' variant='contained' color='success' onClick={handleCreateLink}>OK</Button>
+				</Box>
 			</CustomModal>
 
 			<CustomModal show={showInsertImageBox} onClose={() => setShowInsertImageBox(false)}>
-				<Box>
-					<UploadMedia onUpload={handleUploadImage} onClose={() => setShowInsertImageBox(false)}/>
-				</Box>
+				<UploadMedia onUpload={handleUploadImage} onClose={() => setShowInsertImageBox(false)}/>
 			</CustomModal>
 		</>
 	);

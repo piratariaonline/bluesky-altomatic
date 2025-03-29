@@ -2,11 +2,12 @@ import { Textarea, Typography } from "@mui/joy";
 import { Box, Button } from "@mui/material";
 import React, { useState } from "react";
 import { FileWithAlt } from "../pages/PostScreen";
+import CharCounter from '../components/CharCounter';
+import './AltTextEditor.css';
 
 interface Props {
 	files: FileWithAlt[];
 	fileIndex: number;
-	onSetAltText: (files: FileWithAlt[]) => void;
 	onClose: () => void;
 }
 
@@ -14,7 +15,7 @@ const AltTextEditor: React.FC<Props> = (props) => {
 
 	const MAX_CHARACTERS = 2000;
 
-	const { files, fileIndex, onSetAltText, onClose } = props;
+	const { files, fileIndex, onClose } = props;
 
 	const [altEditorFocused, setAltEditorFocused] = useState<boolean>(false);
 	const [altText, setAltText] = useState<string>(files[fileIndex].alt);
@@ -37,7 +38,6 @@ const AltTextEditor: React.FC<Props> = (props) => {
 
 	const handleAccept = () => {
 		files[fileIndex].alt = altText;
-		onSetAltText(files);
 		onClose();
 	}
 
@@ -59,7 +59,7 @@ const AltTextEditor: React.FC<Props> = (props) => {
 					minRows={altEditorFocused ? 8 : 1}
 					maxRows={altEditorFocused ? 8 : 1}
 					placeholder="Texto alternativo"
-					endDecorator={renderCounter()}
+					endDecorator={<CharCounter count={charCount}/>}
 				/>
 			</Box>
 
