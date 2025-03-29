@@ -2,6 +2,8 @@ import { ProfileViewDetailed } from "@atproto/api/dist/client/types/app/bsky/act
 import Loading from "./Loading";
 import { Avatar, Box, Button, Typography } from "@mui/material";
 import { Logout } from "@mui/icons-material";
+import ViewportManager from '../services/ViewportManager';
+import './ProfileHeader.css';
 
 interface Props {
 	profile: ProfileViewDetailed | undefined;
@@ -11,46 +13,33 @@ interface Props {
 const ProfileHeader: React.FC<Props> = (props) => {
 
 	const { profile, onLogout } = props;
+	const { SX } = ViewportManager;
+	
 
 	return (
 		<Loading isLoading={!profile}>
-			<Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-				<Box sx={{ display: 'flex'}}>
+			<Box className='profile-header-container'>
+				<Box className='profile-data-container'>
 					{
 						profile && profile.avatar && (
-							<Avatar
-								alt={profile.displayName}
-								src={profile.avatar}
-								sx={{ width: 40, height: 40, mb: 2, border: 'solid 1px grey' }}
-							/>
+							<Avatar className='avatar' alt={profile.displayName} src={profile.avatar}/>
 						)
 					}
-					<Box sx={{ display: 'block', marginLeft: '10px' }}>
-						<Typography variant="body1" sx={{ fontSize: '14px' }}>
-							<strong>{profile ? profile.displayName : '---'}</strong>
+					<Box className='user-info'>
+						<Typography variant="body1" className='display-name'>
+							<a href={profile ? `https://bsky.app/profile/${profile.handle}` : '#'} target='_blank'>
+								<strong>{profile ? profile.displayName : '---'}</strong>
+							</a>
 						</Typography>
-						<Typography variant="body1" sx={{ fontSize: '12px' }}>
+						<Typography variant="body1" className='handler'>
 							@{profile ? profile.handle : '---'}
 						</Typography>
 					</Box>
 				</Box>
 				<Box>
-					<Button
-						variant="contained"
-						color="error"
-						sx={{
-							borderRadius: '10px',
-							minWidth: { xs: 'auto', md: '20px' },
-							height: { xs: 'auto', md: '20px' },
-							p: { xs: 1, md: 2 },
-							// mt: { xs: 0, md: 2 },
-						}}
-						onClick={onLogout}
-					>
+					<Button className='logout-btn' variant="contained" color="error" sx={SX.ProfileHeader.LogoutBtn} onClick={onLogout}>
 						<Logout />
-						<Box sx={{ display: { xs: 'none', md: 'block' }, ml: 1 }}>
-							Sair
-						</Box>
+						<Box className='label' sx={SX.ProfileHeader.LogoutBtnLabel}>Sair</Box>
 					</Button>
 				</Box>
 			</Box>

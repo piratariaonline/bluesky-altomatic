@@ -34,47 +34,25 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 	const [files, setFiles] = useState<FileWithAlt[]>([]);
 	const [timerToken, setTimerToken] = useState<any>();
 	const [holdPostButton, setHoldPostButton] = useState<boolean>();
-	const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
 	const [showAltEditor, setShowAltEditor] = useState<boolean>(false);
 	const [fileSelected, setFileSelected] = useState<number>();
 	
 	const md = markdownit('commonmark');
 
-	useEffect(() => {
-		const getProfile = async () => {
-			const profile = await agent.getProfile({actor: agent.did!});
-			setProfile(profile.data);
-		}
-		getProfile();
-	}, []);
+	const handleFetchProfileData = async () => {
+		const profile = await agent.getProfile({actor: agent.did!});
+		setProfile(profile.data);
+	}
+	useEffect(() => { handleFetchProfileData() }, []);
 
-    const handlePost = async () => {
-        try {
-			setHoldPostButton(true);
-			setIsPosting(true);
-            if (postBody) {
-				const post = {...postBody};
-				const postImages = await processImages();
-				post.embed = {
-					$type: "app.bsky.embed.images",
-					images: postImages,
-				}
-				await agent.post(post);
-			}
-        } catch (err) {
-            console.error(`Erro ao postar: ${err}`);
-        } finally {
-			setClearPost(true);
-			setFileSelected(undefined);
-			setPostBody(undefined);
-			setFiles([]);
-			setPreview('');
-			setHoldPostButton(false);
-			setIsPosting(false);
-		}
-    };
+	const handlePostProcessing = () => {
+		setClearPost(false);
+		processPostContent();
+		processPreviewContent();
+	}
+	useEffect(handlePostProcessing, [post]);
 
-	const processImages = async () => {
+	const processPostImages = async () => {
 		const images = [];
 		if (files.length > 0) {
 			try {
@@ -163,24 +141,43 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 		onLogout();
 	}
 
-	const handleRemoveFiles = () => {
-		if (fileSelected !== undefined) {
+	const handleClearEditor = () => {
+		setClearPost(true);
+		setFileSelected(undefined);
+		setPostBody(undefined);
+		setFiles([]);
+		setPreview('');
+	}
+
+	const handleRemoveFile = (index: number) => {
+		if (index !== undefined) {
 			const toRemove = [...files];
-			toRemove.splice(fileSelected, 1);
+			toRemove.splice(index, 1);
 			setFiles(toRemove);
 		}
-		setShowConfirmDelete(false);
 	}
 
-	const handleAltTextEdit = (files: FileWithAlt[]) => {
-		setFileSelected
-	}
-
-	useEffect(() => {
-		setClearPost(false);
-		processPostContent();
-		processPreviewContent();
-	}, [post]);
+	const handlePost = async () => {
+        try {
+			setHoldPostButton(true);
+			setIsPosting(true);
+            if (postBody) {
+				const post = {...postBody};
+				const postImages = await processPostImages();
+				post.embed = {
+					$type: "app.bsky.embed.images",
+					images: postImages,
+				}
+				await agent.post(post);
+			}
+        } catch (err) {
+            console.error(`Erro ao postar: ${err}`);
+        } finally {
+			handleClearEditor();
+			setHoldPostButton(false);
+			setIsPosting(false);
+		}
+    };
 
 	return (
 		<>
@@ -208,10 +205,7 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 								<CardContent>
 									<ProfileHeader profile={profile} onLogout={handleLogout} />
 									<Preview preview={preview} files={files}
-										onRemoveFile={(index) => {
-											setFileSelected(index);
-											setShowConfirmDelete(true);
-										}}
+										onRemoveFile={handleRemoveFile}
 										onAltEdit={(index) => {
 											setFileSelected(index);
 											setShowAltEditor(true);
@@ -223,21 +217,18 @@ const PostScreen: React.FC<{ agent: AtpAgent, onLogout: () => void }> = ({ agent
 					</Grid2>
 				</Grid2>
 			</Container>
+
+			{/* Editor de Alt Text */}
 			<CustomModal show={showAltEditor} onClose={() => setShowAltEditor(false)}>
 			{
 				files && fileSelected !== undefined && files[fileSelected] ? (
 					<AltTextEditor
 						files={files}
 						fileIndex={fileSelected}
-						onSetAltText={handleAltTextEdit}
 						onClose={() => setShowAltEditor(false)}
 					/>
 				) : (<></>)
 			}
-			</CustomModal>
-			<CustomModal show={showConfirmDelete} onClose={() => setShowConfirmDelete(false)}>
-				<Typography>Remover esta imagem?</Typography>
-				<Button color='success' onClick={handleRemoveFiles}>OK</Button>
 			</CustomModal>
 		</>
 	);

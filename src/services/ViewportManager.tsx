@@ -6,7 +6,7 @@
 const SX = {
 	AuthCardBox: {
 		mt: { md: 3, xs: 1 },
-		p: 	{ md: 3, xs: 2 }
+		p: 	{ md: 2, xs: 1 }
 	},
 	PostScreen: {
 		ContainerGrid: {
@@ -15,11 +15,22 @@ const SX = {
 		},
 		EditorBox: {
 			mt: { md: 3, xs: 1 },
-			p: 	{ md: 3, xs: 2 }
+			p: 	{ md: 2, xs: 1 }
 		},
 		PreviewBox: {
 			mt: { md: 3, xs: 1 },
-			p:  { md: 3, xs: 2 }
+			p:  { md: 2, xs: 1 }
+		}
+	},
+	ProfileHeader: {
+		LogoutBtn: {
+			minWidth: { md: '20px', xs: 'auto' },
+			height:   { md: '20px', xs: 'auto' },
+			p:		  { md: 2, xs: 1 },
+		// mt: 		  { md: 2, xs: 0 },
+		},
+		LogoutBtnLabel: {
+			display: { md: 'block', xs: 'none' }
 		}
 	}
 }
