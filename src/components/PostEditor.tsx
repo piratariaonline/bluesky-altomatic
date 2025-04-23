@@ -102,10 +102,12 @@ const PostEditor: React.FC<Props> = (props) => {
 		const {start, end } = selectedTextLimits;
 
 		setEditorContent((prev) => {
+			const url = !linkUrl.startsWith('https://') && !linkUrl.includes('://') ?
+				`https://${linkUrl}` : linkUrl;
 			const newVal = `${[
 				prev.slice(0, start),
 				'[',prev.slice(start, end),']',
-				'(',linkUrl,')',
+				'(',url,')',
 				prev.slice(end, prev.length),
 			].join('')}`
 			onEditPost(newVal);
