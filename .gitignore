@@ -10,6 +10,8 @@ logs
 
 node_modules
 bower_components
+build
+/build
 
 *.sublime*
 
@@ -18,5 +20,4 @@ thumb
 sketch
 
 .env*
-
 # End of https://www.toptal.com/developers/gitignore/api/react
